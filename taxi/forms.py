@@ -9,21 +9,23 @@ from taxi.models import Driver, Car
 
 
 def validate_license(license_number: str) -> None:
-    if len(license_number) != 8:
-        raise ValidationError("License number must consist only 8 characters!")
-    if not re.match("[A-Z]{3}", license_number[:3]):
-        raise ValidationError("First 3 characters must be uppercase letters")
-    if not license_number[3:].isdigit():
-        raise ValidationError("Last 5 characters must be digits.")
+    if not re.match("[A-Z]{3}[0-9]{5}", license_number):
+        raise ValidationError("License number must contain 8 letter in which"
+                              " first 3 - is digit and last 5 is numbers.")
 
 
-class DriverCreationForm(UserCreationForm):
+class LicenseFormMixin(forms.ModelForm):
     license_number = forms.CharField(
         max_length=8,
         validators=[validate_license],
         required=True
     )
 
+    class Meta:
+        abstract = True
+
+
+class DriverCreationForm(LicenseFormMixin, UserCreationForm):
     class Meta:
         model = Driver
         fields = UserCreationForm.Meta.fields + (
@@ -33,13 +35,7 @@ class DriverCreationForm(UserCreationForm):
         )
 
 
-class DriverLicenseUpdateForm(forms.ModelForm):
-    license_number = forms.CharField(
-        max_length=8,
-        validators=[validate_license],
-        required=True
-    )
-
+class DriverLicenseUpdateForm(LicenseFormMixin, forms.ModelForm):
     class Meta:
         model = Driver
         fields = ("license_number",)
